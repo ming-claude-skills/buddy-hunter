@@ -77,7 +77,30 @@ print('companion:', json.dumps(c.get('companion'), indent=2, ensure_ascii=False)
 - 当前 buddy 信息（如果有）
 - 将要使用的路径（A 或 B）
 
-如果是 OAuth 登录，告知用户路径 B 需要修改 Claude Code 二进制文件，用 `AskUserQuestion` 确认是否继续。
+然后根据路径用 `AskUserQuestion` 告知风险并确认：
+
+**非 OAuth（路径 A）**：
+
+> 你当前未登录 OAuth，将通过修改 ~/.claude.json 中的 userID 来更换 buddy。
+>
+> ⚠️ 风险提示：
+> - 修改配置文件格式错误可能导致 Claude Code 无法启动（操作前会自动备份）
+> - 修改 Claude Code 行为可能违反 Anthropic 服务条款，本工具不做任何保证
+> - SALT 值可能随版本更新变化，届时 buddy 会还原
+>
+> 是否继续？
+
+**OAuth（路径 B）**：
+
+> 你当前通过 OAuth 登录，需要修改 Claude Code 二进制文件中的 SALT 字符串来更换 buddy。
+>
+> ⚠️ 风险提示：
+> - 二进制补丁操作不当可能导致 Claude Code 崩溃（操作前会自动备份）
+> - macOS 代码签名会失效，可能影响 Keychain 访问
+> - Claude Code 每次自动更新都会覆盖补丁，需要重新执行
+> - 修改 Claude Code 行为可能违反 Anthropic 服务条款，本工具不做任何保证
+>
+> 是否继续？
 
 ---
 

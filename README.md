@@ -97,11 +97,30 @@ Shiny chance: 1%. Legendary + Shiny = ~0.01%.
 
 - [Bun](https://bun.sh/) runtime (the search script MUST run under Bun, not Node.js — Claude Code uses `Bun.hash()` which produces different results than Node's FNV-1a fallback)
 
-## Important Notes
+## ⚠️ Risk Disclaimer
 
-- The SALT value (`friend-2026-401`) may change with Claude Code updates. The skill includes instructions to extract it from the binary.
-- For OAuth users: binary patches are overwritten by auto-updates — you'll need to re-patch after each update.
-- This plugin only affects the cosmetic `/buddy` companion. It does not modify any functional behavior, API calls, or billing.
+**This plugin modifies Claude Code's local configuration or binary. Use at your own risk.**
+
+### General Risks (Both Paths)
+
+- **Config corruption**: Editing `~/.claude.json` with malformed JSON will prevent Claude Code from starting. The skill validates JSON after every edit, but mistakes can happen. **Always keep a backup.**
+- **Terms of Service**: Modifying Claude Code's behavior may violate [Anthropic's Terms of Service](https://www.anthropic.com/terms). No account bans have been observed for cosmetic-only changes, but **there is no guarantee**. This project is not affiliated with or endorsed by Anthropic.
+- **SALT changes**: The SALT value (`friend-2026-401`) may change with Claude Code updates. If it does, your buddy will revert and scripts need updating.
+
+### OAuth Path (Binary Patching) — Additional Risks
+
+- **Binary breakage**: Patching the binary incorrectly could crash Claude Code. **Always back up the binary first** — the skill does this automatically.
+- **Code signing invalidation**: macOS Hardened Runtime signature is broken after patching. This may cause Keychain access issues (OAuth token retrieval). Ad-hoc re-signing usually fixes this, but is not guaranteed.
+- **Auto-update overwrites**: Every Claude Code update replaces the binary, undoing your patch. You'll need to re-run the skill after each update.
+- **Unintended replacements**: `sed` replaces ALL occurrences of the SALT string in the binary. In the unlikely event the same string appears elsewhere, it could cause unexpected behavior. (Analysis of the source code shows the SALT is only used in the buddy system, but future versions could differ.)
+
+### How to Recover
+
+| Situation | Recovery |
+|-----------|----------|
+| Broken `~/.claude.json` | `cp ~/.claude.json.bak ~/.claude.json` |
+| Broken Claude Code binary | `cp /path/to/claude.bak /path/to/claude` |
+| Want to undo everything | Restore both backups, or reinstall Claude Code |
 
 ## License
 

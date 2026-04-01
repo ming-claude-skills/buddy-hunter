@@ -95,11 +95,30 @@ duck, goose, blob, cat, dragon, octopus, owl, penguin, turtle, snail, ghost, axo
 
 - [Bun](https://bun.sh/) 运行时（搜索脚本**必须**用 Bun 运行，不能用 Node.js —— Claude Code 使用 `Bun.hash()` (wyhash)，与 Node.js 的 FNV-1a 结果完全不同）
 
-## 注意事项
+## ⚠️ 风险提示
 
-- SALT 值（`friend-2026-401`）可能随 Claude Code 版本更新而变化，skill 中包含从二进制提取最新 SALT 的方法。
-- OAuth 用户：自动更新会覆盖二进制补丁，更新后需重新 patch。
-- 本插件仅影响装饰性的 `/buddy` 伙伴，不修改任何功能行为、API 调用或计费。
+**本插件会修改 Claude Code 的本地配置或二进制文件，使用风险自负。**
+
+### 通用风险（两条路径）
+
+- **配置损坏**：编辑 `~/.claude.json` 时如果 JSON 格式错误，Claude Code 将无法启动。skill 会在每次修改后校验格式，但仍建议**提前备份**。
+- **服务条款**：修改 Claude Code 的行为可能违反 [Anthropic 服务条款](https://www.anthropic.com/terms)。目前未观察到因装饰性修改导致封号的情况，但**不做任何保证**。本项目与 Anthropic 无关，也未获其认可。
+- **SALT 变更**：SALT 值（`friend-2026-401`）可能随 Claude Code 版本更新而变化，届时 buddy 会还原，脚本也需要更新。
+
+### OAuth 路径（二进制补丁）— 额外风险
+
+- **二进制损坏**：错误的补丁操作可能导致 Claude Code 崩溃。**务必先备份二进制** — skill 会自动完成备份。
+- **代码签名失效**：macOS Hardened Runtime 签名在补丁后失效，可能导致 Keychain 访问异常（影响 OAuth token 读取）。ad-hoc 重签通常可解决，但不保证。
+- **自动更新覆盖**：Claude Code 每次更新都会替换二进制文件，补丁随之丢失。更新后需重新执行 skill。
+- **误替换**：`sed` 会替换二进制中所有匹配 SALT 的字符串。虽然源码分析显示 SALT 仅用于 buddy 系统，但未来版本可能不同。
+
+### 恢复方法
+
+| 情况 | 恢复方式 |
+|------|---------|
+| `~/.claude.json` 损坏 | `cp ~/.claude.json.bak ~/.claude.json` |
+| Claude Code 二进制损坏 | `cp /path/to/claude.bak /path/to/claude` |
+| 想完全撤销 | 恢复两个备份文件，或重新安装 Claude Code |
 
 ## 许可证
 
