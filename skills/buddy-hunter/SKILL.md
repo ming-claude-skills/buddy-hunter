@@ -136,28 +136,42 @@ print('companion:', json.dumps(c.get('companion'), indent=2, ensure_ascii=False)
 - 中等搜索（+ legendary + shiny）："`开始搜索...去倒杯咖啡吧 ☕`"
 - 困难搜索（+ 属性满值 + 总和 ≥ 415）："`全力搜索中...你的电脑风扇可能要起飞了 🛫 建议趁这段时间摸摸你家的猫/狗/仓鼠`"
 
-### 执行策略：后台运行 + 增量确认
+### 执行策略：stop-after + 断点续跑
 
-搜索脚本会增量输出——每找到更优的结果就打印一行。**对于困难搜索（legendary + shiny + 属性满值等），使用后台运行模式，边搜边问用户是否满意，避免长时间阻塞。**
+脚本支持 `--stop-after` 和 `--checkpoint` 参数，找到 N 个逐步更优的结果后自动暂停，让用户决定是否继续。
 
-具体流程：
+**首次运行**：使用 `--stop-after 2 --checkpoint /tmp/buddy-checkpoint.json`
 
-1. **使用 `run_in_background: true` 启动搜索脚本**（Bash 工具参数）
-2. **等待约 15-30 秒后，读取输出文件**（Read 工具，路径在 Bash 返回的元数据中）检查是否已有结果
-3. **如果有结果，用 `AskUserQuestion` 展示当前最优结果并询问**：
-   > 当前搜索到的最优结果：
-   > - \<species\> \<rarity\> \<shiny\>
-   > - 总属性值：\<total\>/421
-   > - 属性分布：\<stats\>
-   >
-   > 搜索仍在后台继续，可能找到更好的。你想：
-   > A) 就用这个！
-   > B) 再等等，看看有没有更好的
-4. **如果用户选择 A**：使用 `kill` 终止后台脚本进程，进入步骤 5
-5. **如果用户选择 B**：再等 30-60 秒后重复步骤 3
-6. **如果脚本已自然结束**（找到 total ≥ 418 或搜索完毕）：直接展示最终结果并确认
+```bash
+bun <SKILL_DIR>/scripts/search-userid.ts \
+  --species <物种> --rarity <稀有度> [--shiny] [--stat <属性名>] [--min-total <最低总值>] \
+  --stop-after 2 --checkpoint /tmp/buddy-checkpoint.json
+```
 
-对于简单搜索（秒出结果），不需要后台模式，直接前台运行即可。
+脚本找到 2 个逐步更优的结果后自动暂停并保存进度。然后用 `AskUserQuestion` 展示结果并询问：
+
+> 搜索找到了以下结果：
+> - \<species\> \<rarity\> \<shiny\>
+> - 总属性值：\<total\>/421
+> - 属性分布：\<stats\>
+>
+> 你想：
+> A) 就用这个！
+> B) 继续搜索，看看有没有更好的（从断点继续）
+
+**用户选择 A** → 进入步骤 5
+
+**用户选择 B** → 用相同命令重新运行，脚本会自动从 checkpoint 断点处继续搜索：
+
+```bash
+bun <SKILL_DIR>/scripts/search-userid.ts \
+  --species <物种> --rarity <稀有度> [--shiny] [--stat <属性名>] [--min-total <最低总值>] \
+  --stop-after 2 --checkpoint /tmp/buddy-checkpoint.json
+```
+
+重复此循环直到用户满意或脚本搜索完毕（total ≥ 418 或所有前缀耗尽时自动结束）。
+
+**对于简单搜索**（秒出结果），不需要 `--stop-after` 和 `--checkpoint`，直接前台运行即可。
 
 ### 脚本命令
 
@@ -169,7 +183,9 @@ bun <SKILL_DIR>/scripts/search-userid.ts \
   --rarity <稀有度> \
   [--shiny] \
   [--stat <属性名>] \
-  [--min-total <最低总值>]
+  [--min-total <最低总值>] \
+  [--stop-after <N>] \
+  [--checkpoint <file>]
 ```
 
 路径 B（OAuth）：
@@ -181,7 +197,9 @@ bun <SKILL_DIR>/scripts/search-salt.ts \
   --rarity <稀有度> \
   [--shiny] \
   [--stat <属性名>] \
-  [--min-total <最低总值>]
+  [--min-total <最低总值>] \
+  [--stop-after <N>] \
+  [--checkpoint <file>]
 ```
 
 脚本可用参数：
@@ -192,6 +210,8 @@ bun <SKILL_DIR>/scripts/search-salt.ts \
 - `--min-total <n>` — 最低总属性值
 - `--salt <value>` — 覆盖当前 SALT（默认 friend-2026-401）
 - `--limit <n>` — 每个前缀的最大搜索量（默认 2 亿 / 1 亿）
+- `--stop-after <n>` — 找到 N 个结果后暂停（默认 2）
+- `--checkpoint <file>` — 断点文件路径，支持暂停后续跑
 
 ---
 

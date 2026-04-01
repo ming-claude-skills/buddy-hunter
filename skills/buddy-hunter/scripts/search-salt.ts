@@ -9,6 +9,8 @@
 //   --min-total <n>      Minimum stat total (default: 0)
 //   --salt <value>       Current SALT to replace (default: friend-2026-401)
 //   --limit <n>          Max candidates per prefix (default: 100000000)
+//   --stop-after <n>     Stop after finding N results (default: 2)
+//   --checkpoint <file>  Save/load progress for resume support
 
 const SPECIES = ['duck','goose','blob','cat','dragon','octopus','owl','penguin','turtle','snail','ghost','axolotl','capybara','cactus','robot','rabbit','mushroom','chonk'] as const
 const RARITIES = ['common','uncommon','rare','epic','legendary'] as const
@@ -84,20 +86,47 @@ const MIN_TOTAL = parseInt(getArg('min-total') || '0')
 const ORIG_SALT = getArg('salt') || 'friend-2026-401'
 const SALT_LEN = ORIG_SALT.length
 const LIMIT = parseInt(getArg('limit') || '100000000')
+const STOP_AFTER = parseInt(getArg('stop-after') || '2')
+const CHECKPOINT_FILE = getArg('checkpoint') || null
 
 console.log(`UUID: ${UUID}`)
 console.log(`Current SALT: "${ORIG_SALT}" (${SALT_LEN} chars)`)
 console.log(`Current buddy:`, JSON.stringify(rollWithSalt(UUID, ORIG_SALT)))
-console.log(`\nSearching: species=${TARGET_SPECIES||'any'} rarity=${TARGET_RARITY||'any'} shiny=${WANT_SHINY} stat=${WANT_STAT||'any'}=100 min-total=${MIN_TOTAL}`)
 
 // 7-char prefix + (SALT_LEN - 7)-char number = same length as original SALT
 const PAD_LEN = SALT_LEN - 7
 const PREFIXES = ['friend-','fbuddy-','animal-','legend-','wisdom-','axolot-','shinny-','golden-','cosmic-','mystic-','dragon-','sacred-','divine-','arcane-','pheonx-','zodiac-']
 
-let best: ReturnType<typeof rollWithSalt> | null = null
+// --- Load checkpoint ---
+type Checkpoint = { prefixIdx: number; numIdx: number; best: ReturnType<typeof rollWithSalt> | null; found: number }
+let checkpoint: Checkpoint = { prefixIdx: 0, numIdx: 0, best: null, found: 0 }
 
-for (const prefix of PREFIXES) {
-  for (let i = 0; i < LIMIT; i++) {
+if (CHECKPOINT_FILE) {
+  try {
+    const data = await Bun.file(CHECKPOINT_FILE).json() as Checkpoint
+    checkpoint = data
+    console.log(`Resumed from checkpoint: prefix="${PREFIXES[checkpoint.prefixIdx]}" num=${checkpoint.numIdx} found=${checkpoint.found} best=${checkpoint.best?.total || 'none'}`)
+  } catch {
+    // No checkpoint file yet, start fresh
+  }
+}
+
+function saveCheckpoint(prefixIdx: number, numIdx: number, best: ReturnType<typeof rollWithSalt> | null, found: number) {
+  if (!CHECKPOINT_FILE) return
+  Bun.write(CHECKPOINT_FILE, JSON.stringify({ prefixIdx, numIdx, best, found }))
+}
+
+// --- Search ---
+console.log(`\nSearching: species=${TARGET_SPECIES||'any'} rarity=${TARGET_RARITY||'any'} shiny=${WANT_SHINY} stat=${WANT_STAT||'any'}=100 min-total=${MIN_TOTAL} stop-after=${STOP_AFTER}`)
+
+let best = checkpoint.best
+let foundCount = checkpoint.found
+let stopped = false
+
+for (let pi = checkpoint.prefixIdx; pi < PREFIXES.length && !stopped; pi++) {
+  const prefix = PREFIXES[pi]
+  const startNum = (pi === checkpoint.prefixIdx) ? checkpoint.numIdx : 0
+  for (let i = startNum; i < LIMIT; i++) {
     const salt = prefix + String(i).padStart(PAD_LEN, '0')
     if (salt.length !== SALT_LEN) continue
     const r = rollWithSalt(UUID, salt)
@@ -108,11 +137,18 @@ for (const prefix of PREFIXES) {
     if (r.total < MIN_TOTAL) continue
     if (!best || r.total > best.total) {
       best = r
-      console.log(`Found: total=${best.total} salt="${best.salt}" ${best.rarity}${best.shiny?' shiny':''} ${best.species} ${JSON.stringify(best.stats)}`)
-      if (best.total >= 418) break
+      foundCount++
+      console.log(`[${foundCount}] Found: total=${best.total} salt="${best.salt}" ${best.rarity}${best.shiny?' shiny':''} ${best.species} eye:${best.eye} hat:${best.hat}`)
+      if (best.total >= 418) { stopped = true; break }
+      if (foundCount >= STOP_AFTER) {
+        saveCheckpoint(pi, i + 1, best, foundCount)
+        console.log(`\nPaused after ${foundCount} result(s). Use --checkpoint to resume searching for better results.`)
+        stopped = true
+        break
+      }
     }
   }
-  if (best && best.total >= 418) break
+  if (!stopped) saveCheckpoint(pi + 1, 0, best, foundCount)
 }
 
 if (best) {
@@ -122,6 +158,7 @@ if (best) {
   console.log(`${best.rarity}${best.shiny ? ' shiny' : ''} ${best.species}  eye:${best.eye}  hat:${best.hat}`)
   console.log(`total: ${best.total}/421  peak:${best.peak}  dump:${best.dump}`)
   for (const n of STAT_NAMES) console.log(`  ${n.padEnd(10)} ${best.stats[n]}`)
+  if (!stopped) console.log('\nSearch complete (all prefixes exhausted).')
 } else {
   console.log('\nNo match found. Try relaxing filters or increasing --limit.')
 }
