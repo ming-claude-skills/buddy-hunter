@@ -1,5 +1,7 @@
 # Buddy Hunter
 
+[中文文档](README.zh-CN.md)
+
 A Claude Code plugin that helps you get your dream `/buddy` companion.
 
 ## What is this?
@@ -10,13 +12,27 @@ This plugin reverses the PRNG algorithm and brute-forces a seed that produces yo
 
 ## Install
 
+### Quick Install
+
+Run in your terminal:
+
 ```bash
-claude plugin add ming-claude-skills/buddy-hunter
+claude plugin marketplace add ming-claude-skills/buddy-hunter
+```
+
+### Manual Install (in Claude Code)
+
+Run the following commands **one at a time** in Claude Code:
+
+```
+/plugin marketplace add ming-claude-skills/buddy-hunter
+/plugin install buddy-hunter@buddy-hunter
+/reload-plugins
 ```
 
 ## Usage
 
-Just ask Claude Code:
+Invoke the skill directly:
 
 ```
 /buddy-hunter
