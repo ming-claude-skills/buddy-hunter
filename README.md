@@ -18,6 +18,7 @@ Run in your terminal:
 
 ```bash
 claude plugin marketplace add ming-claude-skills/buddy-hunter
+claude plugin install buddy-hunter@buddy-hunter
 ```
 
 ### Manual Install (in Claude Code)

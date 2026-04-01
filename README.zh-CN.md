@@ -16,6 +16,7 @@ Claude Code 的 `/buddy` 命令会根据你的用户 ID 确定性地生成一个
 
 ```bash
 claude plugin marketplace add ming-claude-skills/buddy-hunter
+claude plugin install buddy-hunter@buddy-hunter
 ```
 
 ### 手动安装（在 Claude Code 中）
