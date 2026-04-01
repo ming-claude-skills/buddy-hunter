@@ -1,0 +1,23 @@
+{
+  "name": "buddy-hunter",
+  "version": "1.0.0",
+  "description": "Help users get their desired Claude Code /buddy companion by brute-forcing the deterministic PRNG seed. Supports both OAuth and non-OAuth login paths.",
+  "author": {
+    "name": "mingmxren",
+    "url": "https://github.com/mingmxren"
+  },
+  "homepage": "https://github.com/ming-claude-skills/buddy-hunter",
+  "repository": "https://github.com/ming-claude-skills/buddy-hunter",
+  "license": "MIT",
+  "keywords": [
+    "buddy",
+    "companion",
+    "buddy-hunter",
+    "legendary",
+    "shiny",
+    "axolotl",
+    "prng",
+    "brute-force",
+    "customization"
+  ]
+}
