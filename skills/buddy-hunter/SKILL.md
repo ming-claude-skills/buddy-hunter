@@ -113,7 +113,32 @@ print('companion:', json.dumps(c.get('companion'), indent=2, ensure_ascii=False)
 - 中等搜索（+ legendary + shiny）："`开始搜索...去倒杯咖啡吧 ☕`"
 - 困难搜索（+ 属性满值 + 总和 ≥ 415）："`全力搜索中...你的电脑风扇可能要起飞了 🛫 建议趁这段时间摸摸你家的猫/狗/仓鼠`"
 
-### 路径 A（非 OAuth）：
+### 执行策略：后台运行 + 增量确认
+
+搜索脚本会增量输出——每找到更优的结果就打印一行。**对于困难搜索（legendary + shiny + 属性满值等），使用后台运行模式，边搜边问用户是否满意，避免长时间阻塞。**
+
+具体流程：
+
+1. **使用 `run_in_background: true` 启动搜索脚本**（Bash 工具参数）
+2. **等待约 15-30 秒后，读取输出文件**（Read 工具，路径在 Bash 返回的元数据中）检查是否已有结果
+3. **如果有结果，用 `AskUserQuestion` 展示当前最优结果并询问**：
+   > 当前搜索到的最优结果：
+   > - \<species\> \<rarity\> \<shiny\>
+   > - 总属性值：\<total\>/421
+   > - 属性分布：\<stats\>
+   >
+   > 搜索仍在后台继续，可能找到更好的。你想：
+   > A) 就用这个！
+   > B) 再等等，看看有没有更好的
+4. **如果用户选择 A**：使用 `kill` 终止后台脚本进程，进入步骤 5
+5. **如果用户选择 B**：再等 30-60 秒后重复步骤 3
+6. **如果脚本已自然结束**（找到 total ≥ 418 或搜索完毕）：直接展示最终结果并确认
+
+对于简单搜索（秒出结果），不需要后台模式，直接前台运行即可。
+
+### 脚本命令
+
+路径 A（非 OAuth）：
 
 ```bash
 bun <SKILL_DIR>/scripts/search-userid.ts \
@@ -124,7 +149,7 @@ bun <SKILL_DIR>/scripts/search-userid.ts \
   [--min-total <最低总值>]
 ```
 
-### 路径 B（OAuth）：
+路径 B（OAuth）：
 
 ```bash
 bun <SKILL_DIR>/scripts/search-salt.ts \
@@ -144,8 +169,6 @@ bun <SKILL_DIR>/scripts/search-salt.ts \
 - `--min-total <n>` — 最低总属性值
 - `--salt <value>` — 覆盖当前 SALT（默认 friend-2026-401）
 - `--limit <n>` — 每个前缀的最大搜索量（默认 2 亿 / 1 亿）
-
-搜索完成后，向用户展示最优结果，用 `AskUserQuestion` 确认是否采用。
 
 ---
 

@@ -9,7 +9,7 @@
     {
       "name": "buddy-hunter",
       "description": "Help users get their desired Claude Code /buddy companion. Supports both OAuth (binary SALT patching) and non-OAuth (userID config) login paths.",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "source": "./",
       "author": {
         "name": "mingmxren",
