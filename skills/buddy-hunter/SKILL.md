@@ -184,7 +184,7 @@ bun <SKILL_DIR>/scripts/search-salt.ts \
 >
 > 是否继续？
 
-确认后执行修改。
+确认后执行修改。**修改 `~/.claude.json` 后必须验证 JSON 格式有效**（见下方"JSON 格式校验"）。
 
 ### 路径 B（OAuth）：替换二进制 SALT
 
@@ -246,7 +246,21 @@ codesign -s - "$CLAUDE_BIN"
 
 > 将要删除 ~/.claude.json 中的 companion 字段（触发重新生成）。是否继续？
 
-确认后执行修改。
+确认后执行修改。**修改 `~/.claude.json` 后必须验证 JSON 格式有效**（见下方"JSON 格式校验"）。
+
+### JSON 格式校验
+
+每次修改 `~/.claude.json` 后，**必须**验证文件是合法 JSON，防止格式错误导致 Claude Code 无法启动：
+
+```bash
+python3 -c "import json; json.load(open('$HOME/.claude.json')); print('JSON OK')"
+```
+
+如果报错，立即修复（常见问题：多余逗号、缺少引号、未闭合括号）。建议修改前先备份：
+
+```bash
+cp ~/.claude.json ~/.claude.json.bak
+```
 
 ### 安全性说明（路径 B）
 
