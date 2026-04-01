@@ -9,15 +9,5 @@
   "homepage": "https://github.com/ming-claude-skills/buddy-hunter",
   "repository": "https://github.com/ming-claude-skills/buddy-hunter",
   "license": "MIT",
-  "keywords": [
-    "buddy",
-    "companion",
-    "buddy-hunter",
-    "legendary",
-    "shiny",
-    "axolotl",
-    "prng",
-    "brute-force",
-    "customization"
-  ]
+  "keywords": ["buddy", "companion", "legendary", "shiny", "prng", "brute-force", "customization"]
 }
